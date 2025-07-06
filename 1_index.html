@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6D9EEB">
+    <title>مخطط الميزانية | Budget Planner</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6D9EEB;
+            --secondary: #A2C4C9;
+            --success: #A2D9A0;
+            --danger: #E8A0A0;
+            --warning: #F0C48C;
+            --light: #F8F9FA;
+            --dark: #343A40;
+            --income: #7BB661;
+            --expense: #D95D77;
+            --background: #F5F7FF;
+            --card-bg: #FFFFFF;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--dark);
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+
+        [dir="rtl"] body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* التطبيق في وضع التثبيت */
+        body.installed {
+            padding-top: 40px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px 0;
+            border-bottom: 2px solid var(--secondary);
+            position: sticky;
+            top: 0;
+            background: var(--background);
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .lang-toggle, .install-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .lang-toggle:hover, .install-btn:hover {
+            background: #5a8ad4;
+            transform: translateY(-2px);
+        }
+
+        .install-btn.installed {
+            background: var(--success);
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, var(--primary), #8AB6F9);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .balance-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .balance-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .income-stat, .expense-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .income-amount {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--income);
+        }
+
+        .expense-amount {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--expense);
+        }
+
+        .input-section {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(109, 158, 235, 0.2);
+        }
+
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #5a8ad4;
+            transform: translateY(-2px);
+        }
+
+        .transactions-section {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .transactions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: var(--transition);
+        }
+
+        .transaction-item:hover {
+            background: #f9f9f9;
+        }
+
+        .transaction-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .transaction-category {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .transaction-description {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .transaction-date {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .transaction-amount.income {
+            color: var(--income);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .transaction-amount.expense {
+            color: var(--expense);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .transaction-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            color: var(--primary);
+        }
+
+        .summary-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .chart-wrapper {
+            height: 250px;
+            position: relative;
+        }
+
+        .categories-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .category-item {
+            background: #f0f5ff;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .category-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .category-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .category-amount {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+
+        /* دليل التثبيت */
+        .install-guide {
+            background: rgba(0,0,0,0.7);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .install-guide.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .guide-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .guide-content h3 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .guide-steps {
+            text-align: left;
+            margin: 20px 0;
+        }
+        
+        .guide-steps li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .close-guide {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .balance-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .summary-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- دليل التثبيت -->
+    <div class="install-guide" id="installGuide">
+        <div class="guide-content">
+            <h3 data-translate="installGuideTitle">دليل تثبيت التطبيق</h3>
+            <div class="guide-steps">
+                <ol>
+                    <li>
+                        <div class="step-number">1</div>
+                        <div data-translate="installStep1">في متصفحك (Chrome أو Safari)، اضغط على زر القائمة (ثلاث نقاط أو مربع مع سهم)</div>
+                    </li>
+                    <li>
+                        <div class="step-number">2</div>
+                        <div data-translate="installStep2">اختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"</div>
+                    </li>
+                    <li>
+                        <div class="step-number">3</div>
+                        <div data-translate="installStep3">اضغط "تثبيت" أو "إضافة" في النافذة المنبثقة</div>
+                    </li>
+                    <li>
+                        <div class="step-number">4</div>
+                        <div data-translate="installStep4">سيظهر التطبيق على شاشتك الرئيسية مثل أي تطبيق آخر</div>
+                    </li>
+                </ol>
+            </div>
+            <button class="close-guide" id="closeGuide" data-translate="closeGuide">فهمت، شكرًا!</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <h1 data-translate="appTitle">مخطط الميزانية</h1>
+            </div>
+            <div class="controls">
+                <button class="lang-toggle" id="languageToggle">
+                    <i class="fas fa-language"></i>
+                    <span data-translate="switchLang">English</span>
+                </button>
+                <button class="install-btn" id="installButton">
+                    <i class="fas fa-download"></i>
+                    <span data-translate="installApp">تثبيت التطبيق</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="balance-card fade-in">
+            <div class="balance-title" data-translate="totalBalance">الرصيد الكلي</div>
+            <div class="balance-amount">$5,420.00</div>
+            <div class="balance-stats">
+                <div class="income-stat">
+                    <div class="stat-label" data-translate="totalIncome">إجمالي الدخل</div>
+                    <div class="income-amount">$7,850.00</div>
+                </div>
+                <div class="expense-stat">
+                    <div class="stat-label" data-translate="totalExpenses">إجمالي المصروفات</div>
+                    <div class="expense-amount">$2,430.00</div>
+                </div>
+            </div>
+        </div>
+
+        <section class="input-section fade-in">
+            <h2 class="section-title">
+                <i class="fas fa-plus-circle"></i>
+                <span data-translate="addTransaction">إضافة معاملة جديدة</span>
+            </h2>
+            <form class="input-form">
+                <div class="form-group">
+                    <label for="transactionType" data-translate="type">النوع</label>
+                    <select id="transactionType">
+                        <option value="income" data-translate="income">دخل</option>
+                        <option value="expense" data-translate="expense">مصروف</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="category" data-translate="category">الفئة</label>
+                    <select id="category">
+                        <option value="salary" data-translate="salary">مرتب</option>
+                        <option value="freelance" data-translate="freelance">عمل حر</option>
+                        <option value="investment" data-translate="investment">استثمار</option>
+                        <option value="food" data-translate="food">طعام</option>
+                        <option value="transport" data-translate="transport">مواصلات</option>
+                        <option value="entertainment" data-translate="entertainment">ترفيه</option>
+                        <option value="shopping" data-translate="shopping">تسوق</option>
+                        <option value="utilities" data-translate="utilities">مرافق</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount" data-translate="amount">المبلغ ($)</label>
+                    <input type="number" id="amount" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="date" data-translate="date">التاريخ</label>
+                    <input type="date" id="date">
+                </div>
+                <div class="form-group">
+                    <label for="description" data-translate="description">الوصف</label>
+                    <input type="text" id="description" data-translate="descriptionPlaceholder" placeholder="أدخل وصفًا للمعاملة">
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-check"></i>
+                    <span data-translate="addButton">إضافة معاملة</span>
+                </button>
+            </form>
+        </section>
+
+        <section class="transactions-section fade-in">
+            <h2 class="section-title">
+                <i class="fas fa-exchange-alt"></i>
+                <span data-translate="recentTransactions">المعاملات الحديثة</span>
+            </h2>
+            <div class="transactions-list">
+                <!-- سيتم إنشاء المعاملات ديناميكيًا باستخدام JavaScript -->
+            </div>
+        </section>
+
+        <div class="summary-section">
+            <div class="chart-container fade-in">
+                <h3 class="chart-title" data-translate="incomeVsExpense">الدخل مقابل المصروفات</h3>
+                <div class="chart-wrapper">
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container fade-in">
+                <h3 class="chart-title" data-translate="expenseByCategory">المصروفات حسب الفئة</h3>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="categories-summary">
+                    <!-- سيتم إنشاء ملخص الفئات ديناميكيًا -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p data-translate="footerText">© 2023 مخطط الميزانية. جميع الحقوق محفوظة.</p>
+        </footer>
+    </div>
+
+    <script>
+        // دعم ثنائية اللغة
+        const translations = {
+            en: {
+                appTitle: "Budget Planner",
+                switchLang: "العربية",
+                installApp: "Install App",
+                totalBalance: "Total Balance",
+                totalIncome: "Total Income",
+                totalExpenses: "Total Expenses",
+                addTransaction: "Add New Transaction",
+                type: "Type",
+                income: "Income",
+                expense: "Expense",
+                category: "Category",
+                amount: "Amount ($)",
+                date: "Date",
+                description: "Description",
+                descriptionPlaceholder: "Enter transaction description",
+                addButton: "Add Transaction",
+                recentTransactions: "Recent Transactions",
+                incomeVsExpense: "Income vs Expenses",
+                expenseByCategory: "Expenses by Category",
+                salary: "Salary",
+                freelance: "Freelance",
+                investment: "Investment",
+                food: "Food",
+                transport: "Transport",
+                entertainment: "Entertainment",
+                shopping: "Shopping",
+                utilities: "Utilities",
+                footerText: "© 2023 Mohammed Almashwaly. All rights reserved.",
+                delete: "Delete",
+                edit: "Edit",
+                installGuideTitle: "App Installation Guide",
+                installStep1: "In your browser (Chrome or Safari), tap the menu button (three dots or share icon)",
+                installStep2: 'Select "Install App" or "Add to Home Screen"',
+                installStep3: 'Tap "Install" or "Add" in the popup',
+                installStep4: "The app will appear on your home screen like any other app",
+                closeGuide: "Got it, thanks!",
+                installHelp: "Installation Help"
+            },
+            ar: {
+                appTitle: "مخطط الميزانية",
+                switchLang: "English",
+                installApp: "تثبيت التطبيق",
+                totalBalance: "الرصيد الكلي",
+                totalIncome: "إجمالي الدخل",
+                totalExpenses: "إجمالي المصروفات",
+                addTransaction: "إضافة معاملة جديدة",
+                type: "النوع",
+                income: "دخل",
+                expense: "مصروف",
+                category: "الفئة",
+                amount: "المبلغ ($)",
+                date: "التاريخ",
+                description: "الوصف",
+                descriptionPlaceholder: "أدخل وصفًا للمعاملة",
+                addButton: "إضافة معاملة",
+                recentTransactions: "المعاملات الحديثة",
+                incomeVsExpense: "الدخل مقابل المصروفات",
+                expenseByCategory: "المصروفات حسب الفئة",
+                salary: "مرتب",
+                freelance: "عمل حر",
+                investment: "استثمار",
+                food: "طعام",
+                transport: "مواصلات",
+                entertainment: "ترفيه",
+                shopping: "تسوق",
+                utilities: "مرافق",
+                footerText: "© 2023 محمد المَشْولي. جميع الحقوق محفوظة.",
+                delete: "حذف",
+                edit: "تعديل",
+                installGuideTitle: "دليل تثبيت التطبيق",
+                installStep1: "في متصفحك (Chrome أو Safari)، اضغط على زر القائمة (ثلاث نقاط أو مربع مع سهم)",
+                installStep2: 'اختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"',
+                installStep3: 'اضغط "تثبيت" أو "إضافة" في النافذة المنبثقة',
+                installStep4: "سيظهر التطبيق على شاشتك الرئيسية مثل أي تطبيق آخر",
+                closeGuide: "فهمت، شكرًا!",
+                installHelp: "مساعدة في التثبيت"
+            }
+        };
+
+        // حالة اللغة الحالية
+        let currentLanguage = 'ar';
+        
+        // وظيفة تبديل اللغة
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            document.documentElement.lang = currentLanguage;
+            document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+            applyTranslations();
+        }
+        
+        // تطبيق الترجمات
+        function applyTranslations() {
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                element.textContent = translations[currentLanguage][key] || key;
+            });
+            
+            // تحديث عناصر الوصف في المعاملات
+            document.querySelectorAll('.transaction-description').forEach((desc, index) => {
+                desc.textContent = transactions[index].description[currentLanguage];
+            });
+        }
+
+        // بيانات التطبيق
+        const transactions = [
+            {
+                id: 1,
+                type: "income",
+                category: "salary",
+                amount: 3500,
+                date: "2023-07-01",
+                description: {
+                    ar: "راتب شهري",
+                    en: "Monthly salary"
+                }
+            },
+            {
+                id: 2,
+                type: "expense",
+                category: "food",
+                amount: 120,
+                date: "2023-07-03",
+                description: {
+                    ar: "سوبر ماركت",
+                    en: "Supermarket"
+                }
+            },
+            {
+                id: 3,
+                type: "income",
+                category: "freelance",
+                amount: 850,
+                date: "2023-07-05",
+                description: {
+                    ar: "عمل حر - تصميم موقع",
+                    en: "Freelance - Website design"
+                }
+            },
+            {
+                id: 4,
+                type: "expense",
+                category: "transport",
+                amount: 65,
+                date: "2023-07-07",
+                description: {
+                    ar: "تذاكر مواصلات",
+                    en: "Transport tickets"
+                }
+            }
+        ];
+
+        // وظيفة عرض المعاملات
+        function renderTransactions() {
+            const container = document.querySelector('.transactions-list');
+            container.innerHTML = '';
+            
+            transactions.forEach(transaction => {
+                const transactionElement = document.createElement('div');
+                transactionElement.className = 'transaction-item';
+                
+                const icon = transaction.type === 'income' ? 
+                    '<i class="fas fa-arrow-down income"></i>' : 
+                    '<i class="fas fa-arrow-up expense"></i>';
+                
+                transactionElement.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="transaction-icon" style="font-size: 24px;">
+                            ${icon}
+                        </div>
+                        <div class="transaction-info">
+                            <div class="transaction-category" data-translate="${transaction.category}">
+                                ${translations[currentLanguage][transaction.category]}
+                            </div>
+                            <div class="transaction-description">
+                                ${transaction.description[currentLanguage]}
+                            </div>
+                            <div class="transaction-date">${transaction.date}</div>
+                        </div>
+                    </div>
+                    <div class="transaction-amount ${transaction.type}">
+                        ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}
+                    </div>
+                    <div class="transaction-actions">
+                        <button class="action-btn" title="${translations[currentLanguage]['edit']}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn" title="${translations[currentLanguage]['delete']}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(transactionElement);
+            });
+        }
+
+        // إنشاء الرسوم البيانية
+        function createCharts() {
+            // رسم بياني للدخل مقابل المصروفات
+            const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+            new Chart(incomeExpenseCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                    datasets: [
+                        {
+                            label: translations[currentLanguage]['income'],
+                            data: [3200, 3400, 3600, 3800, 3700, 3900],
+                            backgroundColor: '#7BB661',
+                            borderRadius: 5
+                        },
+                        {
+                            label: translations[currentLanguage]['expense'],
+                            data: [1200, 1400, 1600, 1800, 1700, 1900],
+                            backgroundColor: '#D95D77',
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // رسم بياني للمصروفات حسب الفئة
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        translations[currentLanguage]['food'],
+                        translations[currentLanguage]['transport'],
+                        translations[currentLanguage]['entertainment'],
+                        translations[currentLanguage]['shopping'],
+                        translations[currentLanguage]['utilities']
+                    ],
+                    datasets: [{
+                        data: [35, 20, 15, 20, 10],
+                        backgroundColor: [
+                            '#E8A0A0',
+                            '#A2C4C9',
+                            '#F0C48C',
+                            '#A2D9A0',
+                            '#6D9EEB'
+                        ],
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        // وظيفة التثبيت
+        function initPWA() {
+            let deferredPrompt;
+            const installButton = document.getElementById('installButton');
+            const installGuide = document.getElementById('installGuide');
+            const closeGuide = document.getElementById('closeGuide');
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installButton.style.display = 'flex';
+                
+                installButton.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                            installButton.classList.add('installed');
+                            installButton.querySelector('span').textContent = translations[currentLanguage]['installApp'];
+                            document.body.classList.add('installed');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                            installGuide.classList.add('active');
+                        }
+                        deferredPrompt = null;
+                    } else {
+                        installGuide.classList.add('active');
+                    }
+                });
+            });
+            
+            // إخفاء دليل التثبيت
+            closeGuide.addEventListener('click', () => {
+                installGuide.classList.remove('active');
+            });
+            
+            // فتح دليل التثبيت إذا لم يدعم المتصفح التثبيت التلقائي
+            window.addEventListener('appinstalled', () => {
+                console.log('PWA was installed');
+                installButton.classList.add('installed');
+                installButton.querySelector('span').textContent = translations[currentLanguage]['installApp'];
+                document.body.classList.add('installed');
+            });
+            
+            // إذا كان التطبيق مثبتًا بالفعل
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                installButton.classList.add('installed');
+                installButton.querySelector('span').textContent = translations[currentLanguage]['installApp'];
+                document.body.classList.add('installed');
+            }
+        }
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', function() {
+            // تطبيق الترجمات
+            applyTranslations();
+            
+            // عرض المعاملات
+            renderTransactions();
+            
+            // إنشاء الرسوم البيانية
+            createCharts();
+            
+            // تهيئة التثبيت
+            initPWA();
+            
+            // تبديل اللغة
+            document.getElementById('languageToggle').addEventListener('click', toggleLanguage);
+            
+            // إضافة معاملة جديدة
+            document.querySelector('.input-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // في تطبيق حقيقي، هنا ستتم إضافة المعاملة إلى القائمة والتخزين المحلي
+                alert(translations[currentLanguage]['addButton'] + " " + translations[currentLanguage]['success']);
+            });
+        });
+
+        // ملف Manifest لتثبيت التطبيق
+        const manifest = {
+            "name": "مخطط الميزانية",
+            "short_name": "الميزانية",
+            "description": "تطبيق لتنظيم الميزانية وتتبع الدخل والمصروفات",
+            "start_url": ".",
+            "display": "standalone",
+            "theme_color": "#6D9EEB",
+            "background_color": "#F5F7FF",
+            "icons": [
+                {
+                    "src": "https://via.placeholder.com/192/6D9EEB/FFFFFF?text=MB",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://via.placeholder.com/512/6D9EEB/FFFFFF?text=MB",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        // إنشاء ملف Manifest ديناميكيًا
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = manifestURL;
+        document.head.appendChild(manifestLink);
+    </script>
+</body>
+</html>
